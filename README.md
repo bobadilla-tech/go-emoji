@@ -1,22 +1,22 @@
-# go-package
+# go-emoji
 
-[![CI](https://github.com/bobadilla-tech/go-package/actions/workflows/ci.yml/badge.svg)](https://github.com/bobadilla-tech/go-package/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/bobadilla-tech/go-package/graph/badge.svg)](https://codecov.io/gh/bobadilla-tech/go-package)
-[![Go Reference](https://pkg.go.dev/badge/github.com/bobadilla-tech/go-package.svg)](https://pkg.go.dev/github.com/bobadilla-tech/go-package)
+[![CI](https://github.com/bobadilla-tech/go-emoji/actions/workflows/ci.yml/badge.svg)](https://github.com/bobadilla-tech/go-emoji/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/bobadilla-tech/go-emoji/graph/badge.svg)](https://codecov.io/gh/bobadilla-tech/go-emoji)
+[![Go Reference](https://pkg.go.dev/badge/github.com/bobadilla-tech/go-emoji.svg)](https://pkg.go.dev/github.com/bobadilla-tech/go-emoji)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Minimal, well-tested Go library that sums integers. Meant as a template repo
-showing the repo hygiene (CI, coverage, licensing, ownership) expected of
-Bobadilla Technologies' Go packages.
+Zero-dependency Go library for emoji lookup and search, backed by an embedded
+Unicode CLDR dataset. Library only — no CLI. The only external module is
+`testify`, used exclusively in tests.
 
-The **library is the main artifact**. The bundled CLI under `cmd/sum` is a
-showcase / internal-testing tool with its own `go.mod`, so importing this
-package never pulls in any CLI-only dependency.
+The dataset lives in `data/emoji.json` (embedded via `//go:embed`) so emoji
+updates are data changes, not code changes. Structure inspired by
+[`diamondburned/go-emoji`](https://github.com/diamondburned/go-emoji).
 
 ## Install
 
 ```sh
-go get github.com/bobadilla-tech/go-package
+go get github.com/bobadilla-tech/go-emoji
 ```
 
 ## Usage
@@ -27,25 +27,41 @@ package main
 import (
 	"fmt"
 
-	"github.com/bobadilla-tech/go-package"
+	"github.com/bobadilla-tech/go-emoji"
 )
 
 func main() {
-	fmt.Println(sum.Sum(1, 2, 3)) // 6
+	svc := emoji.NewService()
+
+	fmt.Println(svc.GetByName("grinning_face")) // {😀 grinning_face Smileys & Emotion U+1F600} true
+	fmt.Println(svc.Random().Emoji)
+
+	results := svc.Search("heart")
+	fmt.Printf("%d matches\n", results.Total)
+
+	animals := svc.ByCategory("Animals & Nature")
+	fmt.Printf("%d animals\n", animals.Total)
+
+	fmt.Println(svc.Categories())
 }
 ```
 
-## CLI (showcase only)
+### API
 
-`cmd/sum` is a thin wrapper around the library, kept in its own Go module so its
-dependencies never leak into the library's `go.mod`:
+- `Service.Random() Emoji` — random emoji (crypto/rand).
+- `Service.GetByName(name string) (Emoji, bool)` — exact name match, case-insensitive.
+- `Service.Search(query string) List` — case-insensitive substring match on name or category.
+- `Service.ByCategory(category string) List` — case-insensitive exact category match.
+- `Service.Categories() []string` — the distinct categories, in order of first appearance.
+- `data.RawEmojiJSON []byte` — the embedded raw JSON.
 
-```sh
-cd cmd/sum
-go run . 1 2 3
-# 6
-```
+## Data
+
+`data/emoji.json` holds 808 records, each with `emoji` (glyph), `name` (CLDR
+snake_case short name), `category` (Unicode category), and `unicode` (U+XXXX
+notation). Derived from the Unicode CLDR / unicode.org emoji specification.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Data derived from the Unicode CLDR emoji specification, which
+is distributed under the Unicode Terms of Use.
