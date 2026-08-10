@@ -10,6 +10,3 @@ go.work
 go.work.sum
 coverage.txt
 coverage.html
-
-# CLI build output
-/cmd/sum/sum

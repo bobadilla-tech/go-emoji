@@ -1,15 +1,17 @@
-# go-package
+# go-emoji
 
-Minimal template Go library: sums integers. Public API is just
-`Sum(nums ...int) int` in the root `sum` package.
+Minimal Go library for emoji lookup and search, backed by an embedded Unicode
+CLDR dataset in `data/emoji.json`. Zero runtime dependencies; `testify` is a
+test-only dependency. Public API is `emoji.NewService()` with `Random`,
+`GetByName`, `Search`, `ByCategory`, and `Categories`.
 
 ## Layout
 
-- Root module (`github.com/bobadilla-tech/go-package`) — the library, zero
-  dependencies.
-- `cmd/sum` — showcase CLI, its **own separate Go module** with a `replace`
-  directive back to the root. This keeps any CLI-only dependency out of the
-  library's `go.mod`/`go.sum`. Most users should never need to touch `cmd/sum`.
+- Root module (`github.com/bobadilla-tech/go-emoji`) — the library, zero
+  runtime dependencies.
+- `data/` — the embedded dataset: `data/emoji.json` plus a one-line
+  `//go:embed` in `data/data.go`. `data` exposes the raw bytes; the root
+  `emoji` package parses them once at init.
 
 ## Commands
 
@@ -20,11 +22,15 @@ go vet ./...
 gofmt -l .
 ```
 
-For the CLI module:
-
-```sh
-cd cmd/sum && go build ./... && go run . 1 2 3
-```
+Adding or bumping dependencies: `go get` then `go mod tidy` — keep `go.sum`
+checked in.
 
 No Makefile, no lint config beyond `go vet` + `gofmt` — matches the rest of the
 bobadilla-tech Go packages.
+
+## Updating the dataset
+
+Editing emoji entries is a data PR: modify `data/emoji.json`, run
+`go test ./...` (the dataset-integrity test enforces the record count and
+non-empty fields), and update the count asserted in `emoji_test.go` if entries
+were added or removed.
